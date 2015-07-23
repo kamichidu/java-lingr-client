@@ -2,10 +2,10 @@ package jp.michikusa.chitose.lingr;
 
 @SuppressWarnings("serial")
 public class LingrException
-	extends RuntimeException
+    extends RuntimeException
 {
-	public LingrException(LingrResponse resp)
-	{
-		super(String.format("%s - %s", resp.getCode(), resp.getDetail()));
-	}
+    public LingrException(LingrResponse resp)
+    {
+        super(String.format("%s - %s", resp.getCode(), resp.getDetail()));
+    }
 }
