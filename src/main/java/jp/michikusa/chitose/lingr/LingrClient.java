@@ -6,7 +6,6 @@ import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.http.json.JsonHttpContent;
 import com.google.api.client.json.GenericJson;
 import com.google.api.client.json.JsonFactory;
@@ -28,6 +27,13 @@ import static com.google.common.base.Preconditions.*;
 
 public class LingrClient
 {
+    LingrClient(HttpTransport transport)
+    {
+        checkNotNull(transport);
+
+        this.transport= transport;
+    }
+
     public Session createSession(CharSequence user, CharSequence password)
         throws IOException, LingrException
     {
@@ -228,7 +234,7 @@ public class LingrClient
         url.set("session", session.getSession());
         url.set("counter", counter);
 
-        final HttpRequestFactory requestFactory= transport.createRequestFactory(new HttpRequestInitializer(){
+        final HttpRequestFactory requestFactory= this.transport.createRequestFactory(new HttpRequestInitializer(){
             @Override
             public void initialize(HttpRequest request) throws IOException {
                 request.setParser(factory.createJsonObjectParser());
@@ -254,7 +260,7 @@ public class LingrClient
     private HttpRequest newPostRequest(GenericUrl url, GenericJson data)
         throws IOException
     {
-        final HttpRequestFactory requestFactory= transport.createRequestFactory(new HttpRequestInitializer(){
+        final HttpRequestFactory requestFactory= this.transport.createRequestFactory(new HttpRequestInitializer(){
             @Override
             public void initialize(HttpRequest request)
                 throws IOException
@@ -295,7 +301,8 @@ public class LingrClient
         }
     }
 
-    private static final HttpTransport transport= new NetHttpTransport();
     private static final JsonFactory factory= new GsonFactory();
     private static final GenericUrl endpoint= new GenericUrl("http://lingr.com/api/");
+
+    private final HttpTransport transport;
 }
