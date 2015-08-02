@@ -34,13 +34,13 @@ public class LingrClient
         this.transport= transport;
     }
 
-    public Session createSession(CharSequence user, CharSequence password)
+    public String createSession(CharSequence user, CharSequence password)
         throws IOException, LingrException
     {
         return this.createSession(user, password, null);
     }
 
-    public Session createSession(CharSequence user, CharSequence password, CharSequence apiKey)
+    public String createSession(CharSequence user, CharSequence password, CharSequence apiKey)
         throws IOException, LingrException
     {
         final GenericUrl url= endpoint.clone();
@@ -55,74 +55,82 @@ public class LingrClient
         }
 
         final HttpRequest req= this.newPostRequest(url, data);
-        return this.sendRequest(req, Session.class);
+        return this.sendRequest(req, Session.class).getSession();
     }
 
-    public Session verifySession(Session session)
+    public boolean verifySession(CharSequence session)
         throws IOException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("session/verify");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
 
         final HttpRequest req= this.newPostRequest(url, data);
         try
         {
-            return this.sendRequest(req, Session.class);
+            this.sendRequest(req, Session.class);
+            return true;
         }
         catch(LingrException e)
         {
             // expired
-            return null;
+            return false;
         }
     }
 
-    public void destroySession(Session session)
+    public void destroySession(CharSequence session)
         throws IOException, LingrException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("session/destroy");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
 
         final HttpRequest req= this.newPostRequest(url, data);
         this.sendRequest(req, GenericLingrResponse.class);
     }
 
-    public Iterable<String> getRooms(Session session)
+    public Iterable<String> getRooms(CharSequence session)
         throws IOException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("user/get_rooms");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
 
         final HttpRequest req= this.newPostRequest(url, data);
         final Rooms rooms= this.sendRequest(req, Rooms.class);
         return rooms.getRooms();
     }
 
-    public Room showRoom(Session session, Iterable<? extends CharSequence> roomIds)
+    public Room showRoom(CharSequence session, Iterable<? extends CharSequence> roomIds)
         throws IOException, LingrException
     {
+        checkNotNull(session, "session must not be null");
         checkArgument(!Iterables.isEmpty(roomIds));
 
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("room/show");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
         data.set("rooms", Joiner.on(',').join(roomIds));
 
         final HttpRequest req= this.newPostRequest(url, data);
         return this.sendRequest(req, Room.class);
     }
 
-    public Room showRoom(Session session, CharSequence roomId, CharSequence... roomIds)
+    public Room showRoom(CharSequence session, CharSequence roomId, CharSequence... roomIds)
         throws IOException, LingrException
     {
         final Set<String> ids= new HashSet<>();
@@ -134,14 +142,16 @@ public class LingrClient
         return this.showRoom(session, ids);
     }
 
-    public Archive getArchive(Session session, CharSequence roomId, CharSequence lastMessageId, int limit)
+    public Archive getArchive(CharSequence session, CharSequence roomId, CharSequence lastMessageId, int limit)
         throws IOException, LingrException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("room/get_archives");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
         data.set("room", roomId.toString());
         data.set("before", lastMessageId.toString());
         data.set("limit", limit);
@@ -150,14 +160,16 @@ public class LingrClient
         return this.sendRequest(req, Archive.class);
     }
 
-    public long subscribe(Session session, boolean reset, Iterable<? extends CharSequence> roomIds)
+    public long subscribe(CharSequence session, boolean reset, Iterable<? extends CharSequence> roomIds)
         throws IOException, LingrException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("room/subscribe");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
         data.set("rooms", Joiner.on(',').join(roomIds));
         data.set("reset", reset);
 
@@ -167,7 +179,7 @@ public class LingrClient
         return counter.longValue();
     }
 
-    public long subscribe(Session session, boolean reset, CharSequence roomId, CharSequence... roomIds)
+    public long subscribe(CharSequence session, boolean reset, CharSequence roomId, CharSequence... roomIds)
         throws IOException, LingrException
     {
         final Set<String> ids= new HashSet<>();
@@ -179,14 +191,16 @@ public class LingrClient
         return this.subscribe(session, reset, ids);
     }
 
-    public long unsubscribe(Session session, Iterable<? extends CharSequence> roomIds)
+    public long unsubscribe(CharSequence session, Iterable<? extends CharSequence> roomIds)
         throws IOException, LingrException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("room/unsubscribe");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
         data.set("rooms", Joiner.on(',').join(roomIds));
 
         final HttpRequest req= this.newPostRequest(url, data);
@@ -195,7 +209,7 @@ public class LingrClient
         return counter.longValue();
     }
 
-    public long unsubscribe(Session session, CharSequence roomId, CharSequence...roomIds)
+    public long unsubscribe(CharSequence session, CharSequence roomId, CharSequence...roomIds)
         throws IOException, LingrException
     {
         final Set<String> ids= new HashSet<>();
@@ -207,16 +221,17 @@ public class LingrClient
         return this.unsubscribe(session, ids);
     }
 
-    public Message say(Session session, CharSequence roomId, CharSequence nickname, CharSequence text)
+    public Message say(CharSequence session, CharSequence roomId, CharSequence text)
         throws IOException, LingrException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.appendRawPath("room/say");
 
         final GenericJson data= new GenericJson();
-        data.set("session", session.getSession());
+        data.set("session", session.toString());
         data.set("room", roomId.toString());
-        data.set("nickname", nickname.toString());
         data.set("text", text.toString());
 
         final HttpRequest req= this.newPostRequest(url, data);
@@ -224,14 +239,16 @@ public class LingrClient
         return say.getMessage();
     }
 
-    public Events observe(Session session, long counter, final long timeoutLength, final TimeUnit unit)
+    public Events observe(CharSequence session, long counter, final long timeoutLength, final TimeUnit unit)
         throws IOException, LingrException
     {
+        checkNotNull(session, "session must not be null");
+
         final GenericUrl url= endpoint.clone();
         url.setPort(8080);
         url.appendRawPath("event/observe");
 
-        url.set("session", session.getSession());
+        url.set("session", session.toString());
         url.set("counter", counter);
 
         final HttpRequestFactory requestFactory= this.transport.createRequestFactory(new HttpRequestInitializer(){
